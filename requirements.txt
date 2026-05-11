@@ -1,6 +1,4 @@
-# Pinned in real implementation. For now, placeholder so the workflow can install.
-anthropic>=0.40
-httpx>=0.27
-feedparser>=6.0
-beautifulsoup4>=4.12
-PyGithub>=2.1
+# scripts/trending_scan.py and scripts/prune_stale_trending.py use the Python
+# standard library only (urllib, json, re, datetime). No external deps needed
+# at the current implementation. Future sessions may add: anthropic, httpx,
+# feedparser, beautifulsoup4 if richer parsing or SDK ergonomics are wanted.
