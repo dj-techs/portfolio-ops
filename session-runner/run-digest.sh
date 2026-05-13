@@ -24,7 +24,9 @@ if [[ ! -d "$OPS_DIR" ]]; then
   gh repo clone jt-mchorse/portfolio-ops 2>&1 | tee -a "$LOG_FILE"
 else
   cd "$OPS_DIR"
-  git pull --rebase 2>&1 | tee -a "$LOG_FILE"
+  git fetch origin 2>&1 | tee -a "$LOG_FILE"
+  git checkout main 2>&1 | tee -a "$LOG_FILE"
+  git reset --hard origin/main 2>&1 | tee -a "$LOG_FILE"
 fi
 
 PROMPT_FILE="$OPS_DIR/session-runner/DIGEST_PROMPT.md"
