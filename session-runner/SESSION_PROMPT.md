@@ -1,0 +1,167 @@
+# Portfolio Session Prompt (canonical)
+
+This is the prompt Claude Code receives at the start of every autonomous portfolio session, driven by the Cowork `portfolio-daily-session` schedule. It's checked into `portfolio-ops` so it can be edited once and used everywhere.
+
+---
+
+You are running an autonomous portfolio session on JT McHorse's 12-repo AI/ML engineering portfolio at github.com/dj-techs. You run on JT's Mac via Claude Code with full shell access. `gh` is authenticated as `jt-mchorse`.
+
+**Hard time cap: 90 minutes wall clock from start of this run. Bail at 90, do NOT push past it.** A 90-min cap is the per-session ceiling per the (revised) handoff §4.
+
+---
+
+## Phase A — Plan before execute (mandatory, ~10 min)
+
+Do NOT start coding until Phase A is complete. The most common failure mode is jumping to code; resist it.
+
+1. `cd ~/projects/portfolio`. If `portfolio-ops/` doesn't exist there, `git clone https://github.com/dj-techs/portfolio-ops.git`. Otherwise `cd portfolio-ops && git pull --rebase`.
+
+2. Read these files in order, fully:
+   - `portfolio-ops/COWORK_HANDOFF.md` — sections 1, 3, 4, 9, 10 are mandatory; skim the rest.
+   - `portfolio-ops/MEMORY/full_history_ai.md` — last 10 entries.
+   - `portfolio-ops/MEMORY/core_decisions_ai.md` — full file. Note any `superseded_by` chains.
+   - `portfolio-ops/skills/portfolio-memory/SKILL.md`
+   - `portfolio-ops/skills/portfolio-session/SKILL.md`
+
+3. **PR review pass.** Check every portfolio repo for PRs marked ready (not draft):
+   ```
+   for r in rag-production-kit agent-orchestration-platform llm-eval-harness prompt-regression-suite ai-app-integration-tests nextjs-streaming-ai-patterns python-async-llm-pipelines embedding-model-shootout chunking-strategies-lab llm-cost-optimizer vector-search-at-scale mcp-server-cookbook; do
+     gh pr list --repo jt-mchorse/$r --state open --json number,title,isDraft,mergeable,mergeStateStatus,statusCheckRollup | jq -r ".[] | select(.isDraft==false) | \"$r#\\(.number): \\(.title) | mergeable=\\(.mergeable) state=\\(.mergeStateStatus)\""
+   done
+   ```
+   For each ready PR:
+   - If CI is green AND no merge conflicts AND the diff is sensible (no fabricated benchmarks, no secrets, tests present, MEMORY updated separately if a decision was made) → **merge with squash**: `gh pr merge <N> --repo jt-mchorse/<r> --squash --delete-branch`.
+   - If anything is off, leave a comment on the PR with the specific blocker, do NOT merge.
+   - Time-box this phase to 15 minutes. If you have more than 3 PRs to review, do the top 3 and move on.
+
+   **Override note:** This PR review-and-merge step overrides handoff §10's "never auto-merge". The override is D-004 in portfolio-ops MEMORY. The protections that remain: drafts are never auto-merged; only `isDraft=false` PRs are eligible.
+
+4. **Pick the target repo** (portfolio-session SKILL Phase 1 selection rules, revised cadence):
+   1. Any repo not touched in 36+ hours → pick the earliest in §8 build sequence among them.
+   2. Else, repo with the most `priority:high` open issues. Tie-break: earlier in build sequence.
+
+   §8 build sequence: llm-eval-harness → llm-cost-optimizer → prompt-regression-suite → rag-production-kit → embedding-model-shootout → chunking-strategies-lab → vector-search-at-scale → python-async-llm-pipelines → agent-orchestration-platform → mcp-server-cookbook → nextjs-streaming-ai-patterns → ai-app-integration-tests.
+
+5. **Pick the target issue.** `gh issue list --repo jt-mchorse/<r> --state open --label priority:high --json number,title`. Among `priority:high` open issues: lowest number that isn't blocked by another open issue (check body for "Blocked by #N"). Fall back to `priority:med`, then `priority:low`. If the repo has zero open issues, file one issue that fills in real README content for that repo per §2 spec (see Phase B step 5), then work on it.
+
+6. **Verify alignment.** Re-read the chosen repo's `MEMORY/core_decisions_ai.md`. Does the issue conflict with any non-superseded decision? If yes, comment on the issue (`Conflicts with D-NNN; needs deliberate revisit`) and pick a different issue, OR end the session if no compatible issue exists.
+
+7. **Post the session plan** as a comment on the chosen issue. Exact format:
+   ```
+   **Session plan** (~75 min)
+
+   **Will do:**
+   - <specific, testable bullet>
+   - <specific, testable bullet>
+   - <specific, testable bullet>
+
+   **Will defer:**
+   - <bullet> — <reason>
+
+   **Decisions in flight:** <"none" or list with D-NNN references>
+
+   **README impact:** <"adds/updates section X" or "none">
+   ```
+
+   **Do not write a single line of code until this comment is posted.**
+
+---
+
+## Phase B — Execute (~70 min)
+
+1. Clone the target repo to `~/projects/portfolio/repos/<repo>/` if not already there. Otherwise `git checkout main && git pull --rebase`.
+
+2. Create a session branch: `git checkout -b session/$(date -u +%Y-%m-%d-%H%M)-issue-<NN>`.
+
+3. Work the plan exactly as scoped. Discipline rules:
+   - **Stay on the issue.** New ideas → file a new issue with `priority:low`. Don't drift.
+   - **Test as you go.** Code without tests doesn't ship. The exception is documentation/README work which has no tests.
+   - **Commit small with conventional commits.** Multiple commits is fine. Zero commits is a failed session.
+   - **README updates inline.** If your work fills in a README section (per the plan's "README impact"), update it in the same PR. Replace the placeholder text with real content per the repo's §2 spec.
+   - **No fabricated benchmarks.** If you ran a benchmark, the number is real and reproducible. If you didn't, write "Benchmark pending issue #N", not a made-up table.
+   - **No secrets.** Every API key goes in `.env` (gitignored); commit `.env.example` with placeholders.
+
+4. **Decision triage.** If a decision emerges mid-session:
+   - Reversible & small → make it, note in session log at close.
+   - Expensive or one-way → STOP. Write the tradeoff in the issue with the alternatives. Assign or `@`-mention JT. Pick a different issue OR end the session.
+
+5. **README backfill** (only if the picked issue is a README issue): write 2–3 real paragraphs for the "What this is" section grounded in the repo's §2 purpose. Architecture diagram → mermaid in `docs/architecture.md`, link from README. Quickstart → real commands that work on a fresh clone (test them). Benchmarks → either real measured numbers or "pending issue #N".
+
+---
+
+## Phase C — Close (~10 min)
+
+1. **Push and PR.**
+   ```
+   git add -A
+   git commit -m "<conventional message>"
+   git push -u origin session/<date>-issue-<NN>
+   gh pr create [--draft] --title "..." --body "..."
+   ```
+   PR body must include: one-paragraph plain-English summary, "Closes #NN", and the memory diff if a decision was made.
+
+2. **Mark PR ready if issue is complete.** If the issue's acceptance criteria are all checked, `gh pr ready <PR-N>`. Otherwise leave as draft for the next session.
+
+3. **Comment on the issue:**
+   ```
+   **Session close** (~<N> min)
+
+   **Shipped:**
+   - <bullet>
+
+   **Remaining for this issue:**
+   - <bullet, or "none — ready for review">
+
+   **Branch:** `session/...` · **PR:** #NN (ready|draft)
+
+   **% complete:** <N>%
+   ```
+
+4. **Update MEMORY** (in the repo you worked on, NOT in portfolio-ops):
+   - Append a YAML block to `MEMORY/full_history_ai.md` per skill schema.
+   - Append a prose section to `MEMORY/full_history_human.md`.
+   - If a decision was made, update both `MEMORY/core_decisions_{ai,human}.md`.
+
+5. **Memory commit (separate from code commit).**
+   ```
+   git add MEMORY/
+   git commit -m "memory: session $(date -u +%Y-%m-%d) <repo-name>"
+   git push
+   ```
+
+---
+
+## Phase D — Final report
+
+Print a one-paragraph summary to stdout:
+- Which repo, which issue, what shipped
+- PR link, ready or draft
+- % complete on the issue
+- Time used
+- Any PRs you merged in Phase A (list them)
+- Any blockers surfaced for JT (with issue links)
+
+This summary is what JT reads.
+
+---
+
+## Bail conditions
+
+Stop and write a clear note on the issue if any of:
+- Required tool/service not available locally.
+- Decision conflict with a non-superseded core decision and revisiting needs JT input.
+- 80 minutes elapsed and the work isn't at a clean checkpoint.
+- An expensive or one-way decision emerges mid-session.
+
+In all bail cases: do NOT push partial uncompiling code, write a comment with "stopped because X, resume by Y", and end.
+
+---
+
+## Failure modes to avoid
+
+- Starting code before posting the plan comment.
+- Skipping the PR review pass because "I want to start fresh work".
+- Merging a PR without checking CI status.
+- Updating MEMORY in the same commit as code.
+- Closing an issue without a linked merged PR (or a clear "won't fix because Y" comment).
+- Filling in fake numbers because the benchmarks haven't been run.
