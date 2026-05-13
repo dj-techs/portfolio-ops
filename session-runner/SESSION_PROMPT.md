@@ -41,9 +41,11 @@ Do NOT start coding until Phase A is complete. The most common failure mode is j
 
    **Override note:** This PR review-and-merge step overrides handoff §10's "never auto-merge". The override is D-004 in portfolio-ops MEMORY. The protections that remain: drafts are never auto-merged; only `isDraft=false` PRs are eligible.
 
-4. **Pick the target repo** (portfolio-session SKILL Phase 1 selection rules, revised cadence):
+4. **Pick the target repo** (portfolio-session SKILL Phase 1 selection rules, revised cadence + D-007 fall-through):
    1. Any repo not touched in 36+ hours → pick the earliest in §8 build sequence among them.
    2. Else, repo with the most `priority:high` open issues. Tie-break: earlier in build sequence.
+   3. **D-007 fall-through:** if the chosen repo's *top 3 unblocked priority:high issues are all one-way decisions* (per the repo's `core_decisions_ai.md` superseded chain or "one-way" tagging in the issue body), DO NOT bail the session — instead skip that repo for this session and re-run selection on the remaining 11 repos. Repeat up to 3 fall-throughs before giving up.
+   4. **Skip set is durable for this run.** Once a repo is in the skip set, leave a one-line comment on the blocking issue: `Session skipped due to one-way decision blocker D-NNN. JT decision needed.` — but only if the same comment isn't already on the issue from a recent session.
 
    §8 build sequence: llm-eval-harness → llm-cost-optimizer → prompt-regression-suite → rag-production-kit → embedding-model-shootout → chunking-strategies-lab → vector-search-at-scale → python-async-llm-pipelines → agent-orchestration-platform → mcp-server-cookbook → nextjs-streaming-ai-patterns → ai-app-integration-tests.
 
