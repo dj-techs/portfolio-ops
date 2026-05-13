@@ -11,6 +11,11 @@
 
 set -euo pipefail
 
+# When invoked via launchd / nohup / cron, PATH is minimal. Add common
+# install locations so gh, claude, node etc. are reachable. ~/.local/bin
+# is where Claude Code's installer puts the binary on macOS.
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+
 PORTFOLIO_ROOT="${PORTFOLIO_ROOT:-$HOME/projects/portfolio}"
 OPS_DIR="$PORTFOLIO_ROOT/portfolio-ops"
 LOG_DIR="$PORTFOLIO_ROOT/logs"
