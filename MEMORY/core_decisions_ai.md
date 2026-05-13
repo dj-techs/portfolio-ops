@@ -29,3 +29,21 @@
   reversibility: cheap
   related_issues: []
   superseded_by: null
+
+- id: D-004
+  date: 2026-05-13
+  decision: scheduled_sessions_review_and_merge_ready_prs
+  rationale: jt_explicitly_overrode_section_10_for_velocity_drafts_still_protected
+  alternatives_rejected: [keep_full_human_in_loop, auto_merge_all_prs_ignoring_draft_status]
+  reversibility: cheap
+  related_issues: []
+  superseded_by: null
+
+- id: D-005
+  date: 2026-05-13
+  decision: execution_via_claude_code_on_local_mac_not_cowork_sandbox
+  rationale: cowork_bash_is_sandboxed_no_gh_auth_propagation_jt_requested_full_use_of_granted_permissions
+  alternatives_rejected: [stay_in_cowork_sandbox_with_baked_in_pat, switch_entire_workflow_to_claude_code_only]
+  reversibility: cheap
+  related_issues: []
+  superseded_by: null

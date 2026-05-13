@@ -38,3 +38,21 @@ context_for_next_session:
 decisions_made: [D-003]
 followups: []
 ---
+
+---
+session: 2026-05-13T18:24:10Z
+duration_min: 35
+issue: null
+focus: session_runner_and_cadence_change_per_jt_feedback
+delta:
+  files_added: 3
+  files_changed_in_cowork: 1   # scheduled task prompt and cron
+context_for_next_session:
+  - session_runner_invoked_via_osascript_from_cowork_scheduler
+  - claude_code_must_be_installed_on_mac_see_SETUP_md
+  - new_cadence_every_4h_daily_including_weekends
+  - pr_review_and_merge_step_now_in_phase_a_of_every_session
+  - readme_backfill_done_inline_when_relevant_to_picked_issue
+decisions_made: [D-004, D-005]
+followups: []
+---

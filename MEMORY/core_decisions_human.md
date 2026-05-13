@@ -40,3 +40,29 @@ Strategic decisions for this repo, with reasoning. Append-only — superseded de
 **Related issues:** —
 
 *D-002 is marked superseded by D-003 in `core_decisions_ai.md`.*
+
+## D-004 — Scheduled sessions review and merge ready PRs (2026-05-13)
+**Decision:** Each scheduled session begins with a Phase A pass that lists every non-draft PR across the 12 repos and merges any with green CI, no merge conflicts, and a sensible diff. Drafts remain protected; only `isDraft=false` PRs are eligible. Overrides handoff §10's blanket no-auto-merge.
+
+**Why:** JT explicitly requested it for velocity. The original §10 rule made every PR JT's bottleneck. The compromise: drafts (mid-flight session work) still require manual ready-marking before they can be merged; turning a draft into ready remains a deliberate signal from the session that finished it.
+
+**Alternatives considered:**
+- Keep full human-in-loop — rejected at JT's direction.
+- Auto-merge ALL PRs including drafts — rejected because drafts represent unfinished work; that protection is worth keeping.
+
+**Reversibility:** Cheap. Remove the Phase A merge step from SESSION_PROMPT.md.
+
+**Related issues:** —
+
+## D-005 — Execution via Claude Code on local Mac, not Cowork sandbox (2026-05-13)
+**Decision:** The scheduled portfolio session no longer runs in Cowork's sandboxed bash. The Cowork task uses osascript to open Terminal.app on JT's Mac, which runs `run-session.sh`, which invokes `claude --print --dangerously-skip-permissions` with the canonical SESSION_PROMPT.md. Cowork remains the scheduler; Claude Code is the executor.
+
+**Why:** Cowork's bash is a Linux sandbox VM with no access to JT's gh CLI auth, env vars, or installed tools. JT explicitly asked for use of granted Mac permissions. Running via Claude Code on the host gets us: native gh auth, real shell, full filesystem, all of JT's installed tooling.
+
+**Alternatives considered:**
+- Stay in Cowork sandbox with a PAT baked into the task config — rejected as a worse security and ergonomics trade than just using the Mac directly.
+- Move scheduling to Claude Code too — rejected because Claude Code has no scheduler primitive; we'd need cron / launchd, which adds machine-state coupling.
+
+**Reversibility:** Cheap. Rewrite the Cowork task prompt to run in the sandbox again.
+
+**Related issues:** —
