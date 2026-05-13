@@ -6,6 +6,8 @@
 
 set -euo pipefail
 
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+
 PORTFOLIO_ROOT="${PORTFOLIO_ROOT:-$HOME/projects/portfolio}"
 OPS_DIR="$PORTFOLIO_ROOT/portfolio-ops"
 LOG_DIR="$PORTFOLIO_ROOT/logs"
