@@ -32,7 +32,9 @@ if [[ ! -d "$OPS_DIR" ]]; then
 else
   echo ">>> pulling portfolio-ops" | tee -a "$LOG_FILE"
   cd "$OPS_DIR"
-  git pull --rebase 2>&1 | tee -a "$LOG_FILE"
+  git fetch origin 2>&1 | tee -a "$LOG_FILE"
+  git checkout main 2>&1 | tee -a "$LOG_FILE"
+  git reset --hard origin/main 2>&1 | tee -a "$LOG_FILE"
 fi
 
 PROMPT_FILE="$OPS_DIR/session-runner/SESSION_PROMPT.md"
