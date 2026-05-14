@@ -82,15 +82,45 @@ if [[ "$WHO" != "jt-mchorse" ]]; then
 fi
 echo ">>> gh auth ok as $WHO" | tee -a "$LOG_FILE"
 
-# 4. Invoke Claude Code with the session prompt
+# 4. Time-of-day session cap (D-008): day = 2x the 90-min base, night = 4x.
+#    Day window 06:00-18:00 local -> 180 min. Night 18:00-06:00 -> 360 min.
+HOUR="$(date +%H)"
+# strip any leading zero so arithmetic comparison is base-10
+HOUR=$((10#$HOUR))
+if [ "$HOUR" -ge 6 ] && [ "$HOUR" -lt 18 ]; then
+  SESSION_CAP_MIN=180
+  SESSION_PHASE="DAY"
+else
+  SESSION_CAP_MIN=360
+  SESSION_PHASE="NIGHT"
+fi
+echo ">>> session window: $SESSION_PHASE — cap ${SESSION_CAP_MIN} min" | tee -a "$LOG_FILE"
+
+# 5. Invoke Claude Code with the session prompt, prefixed by a runtime override
+#    header so the static prompt's 90-min cap is superseded for this run.
 echo ">>> launching claude code session" | tee -a "$LOG_FILE"
 cd "$PORTFOLIO_ROOT"
+
+RUNTIME_HEADER="## RUNTIME OVERRIDE (read first)
+
+This is a ${SESSION_PHASE} session. **Hard time cap for THIS run: ${SESSION_CAP_MIN} minutes.** This supersedes the 90-minute cap written in the prompt below.
+
+This is a **multi-issue, multi-repo run**. Do not stop after one issue. The loop is:
+1. Run Phase A once at the start (read context + PR review/merge pass).
+2. Pick a repo + issue, do Phase B, do Phase C (push, PR, MEMORY).
+3. Then LOOP: go back to Phase A step 4 (repo selection), pick the next repo/issue, and repeat Phase B+C.
+4. Keep looping until you are within 15 minutes of the ${SESSION_CAP_MIN}-minute cap, then stop cleanly.
+
+Aim to fully close 2-4 issues in a DAY session and 5-9 in a NIGHT session. Each issue still gets its own branch, PR, and MEMORY commit. Quality bar is unchanged — no fabricated benchmarks, tests with code, MEMORY separate from code commits.
+
+---
+
+"
 
 # Claude Code with --print runs non-interactively and exits on completion.
 # --dangerously-skip-permissions: scheduled task can't answer permission prompts;
 # the session prompt itself enforces what's safe.
-# Working dir: $PORTFOLIO_ROOT so cloned repos are accessible.
-claude --print --dangerously-skip-permissions "$(cat "$PROMPT_FILE")" 2>&1 | tee -a "$LOG_FILE"
+claude --print --dangerously-skip-permissions "${RUNTIME_HEADER}$(cat "$PROMPT_FILE")" 2>&1 | tee -a "$LOG_FILE"
 
 EXIT_CODE=${PIPESTATUS[0]}
 echo ">>> claude exited with $EXIT_CODE" | tee -a "$LOG_FILE"
