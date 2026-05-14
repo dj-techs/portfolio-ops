@@ -24,6 +24,19 @@ LOG_FILE="$LOG_DIR/session-$TIMESTAMP.log"
 
 mkdir -p "$LOG_DIR"
 
+# Single-instance lock — concurrent sessions race on repo/branch selection.
+LOCK="$PORTFOLIO_ROOT/.session.lock"
+if [ -f "$LOCK" ]; then
+  OTHER_PID="$(cat "$LOCK" 2>/dev/null || true)"
+  if [ -n "$OTHER_PID" ] && kill -0 "$OTHER_PID" 2>/dev/null; then
+    echo "ERROR: a session is already running (PID $OTHER_PID). Refusing to start a second." | tee -a "$LOG_FILE"
+    exit 1
+  fi
+  echo ">>> stale lock from dead PID $OTHER_PID — clearing" | tee -a "$LOG_FILE"
+fi
+echo $$ > "$LOCK"
+trap 'rm -f "$LOCK"' EXIT
+
 echo ">>> portfolio-session driver" | tee -a "$LOG_FILE"
 echo ">>> timestamp: $TIMESTAMP" | tee -a "$LOG_FILE"
 echo ">>> portfolio root: $PORTFOLIO_ROOT" | tee -a "$LOG_FILE"

@@ -16,6 +16,17 @@ LOG_FILE="$LOG_DIR/digest-$TIMESTAMP.log"
 
 mkdir -p "$LOG_DIR"
 
+LOCK="$PORTFOLIO_ROOT/.digest.lock"
+if [ -f "$LOCK" ]; then
+  OTHER_PID="$(cat "$LOCK" 2>/dev/null || true)"
+  if [ -n "$OTHER_PID" ] && kill -0 "$OTHER_PID" 2>/dev/null; then
+    echo "ERROR: a digest run is already active (PID $OTHER_PID)." | tee -a "$LOG_FILE"
+    exit 1
+  fi
+fi
+echo $$ > "$LOCK"
+trap 'rm -f "$LOCK"' EXIT
+
 echo ">>> portfolio-digest driver" | tee -a "$LOG_FILE"
 echo ">>> timestamp: $TIMESTAMP" | tee -a "$LOG_FILE"
 
