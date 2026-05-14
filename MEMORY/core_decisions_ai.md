@@ -47,3 +47,12 @@
   reversibility: cheap
   related_issues: []
   superseded_by: null
+
+- id: D-008
+  date: 2026-05-14
+  decision: time_of_day_session_caps_day_180min_night_360min_multi_issue_loop
+  rationale: jt_observed_27pct_limit_usage_per_session_wants_fuller_utilization
+  alternatives_rejected: [uniform_longer_cap, more_frequent_short_sessions]
+  reversibility: cheap
+  related_issues: []
+  superseded_by: null

@@ -66,3 +66,16 @@ Strategic decisions for this repo, with reasoning. Append-only — superseded de
 **Reversibility:** Cheap. Rewrite the Cowork task prompt to run in the sandbox again.
 
 **Related issues:** —
+
+## D-008 — Time-of-day session caps + multi-issue loop (2026-05-14)
+**Decision:** Day sessions (runner starts 06:00-18:00 local) cap at 180 min; night sessions cap at 360 min. The runner detects the window and prepends a RUNTIME OVERRIDE header to the prompt. A run is now an explicit multi-issue, multi-repo loop — after closing one issue the session re-runs selection and picks the next.
+
+**Why:** JT observed each session was using ~27% of the available limit — far below expected utilization. Rather than just bump a uniform cap, day/night split lets night sessions (cheaper attention, JT asleep) run 4x and day sessions 2x.
+
+**Alternatives considered:**
+- Uniform longer cap — rejected; night has more headroom than day, no reason to treat them the same.
+- More frequent short sessions — rejected; per-session context-load overhead (reading handoff + MEMORY + PR pass) is fixed cost, so longer sessions amortize it better than more short ones.
+
+**Reversibility:** Cheap — edit the cap arithmetic in run-session.sh.
+
+**Related issues:** —

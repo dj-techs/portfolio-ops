@@ -56,3 +56,18 @@ context_for_next_session:
 decisions_made: [D-004, D-005]
 followups: []
 ---
+
+---
+session: 2026-05-14T14:03:39Z
+duration_min: 20
+issue: null
+focus: session_cap_extension_and_concurrency_lockfile
+delta:
+  files_changed: 2
+context_for_next_session:
+  - day_sessions_now_180min_night_360min_multi_issue_loop
+  - lockfile_guards_against_concurrent_runs
+  - llm_eval_harness_pr_8_awaiting_review_merge_first_session_with_d004_will_handle
+decisions_made: [D-008]
+followups: []
+---
