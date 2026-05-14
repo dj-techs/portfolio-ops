@@ -6,12 +6,13 @@ This is the prompt Claude Code receives at the start of every autonomous portfol
 
 You are running an autonomous portfolio session on JT McHorse's 12-repo AI/ML engineering portfolio at github.com/jt-mchorse. You run on JT's Mac via Claude Code with full shell access. `gh` is authenticated as `jt-mchorse`.
 
-**Time budget (revised D-006):**
-- **Minimum 15 minutes** of execute time before closing out. If your planned work finishes in under 15 minutes, do NOT close the session — pick the next-highest-priority issue in the same repo and keep going. A session that ships only a 5-line tweak is a failure mode.
-- **Hard cap: 90 minutes** wall clock. Bail at 90, do NOT push past it.
-- **Target: 60–90 minutes** of substantive work per session.
+**Time budget (revised D-006, D-008):**
+- The runner prepends a **RUNTIME OVERRIDE** header with the real cap for this run (180 min for DAY sessions, 360 min for NIGHT sessions). That header supersedes the numbers in this section.
+- If no override header is present, fall back to: **15 min minimum, 90 min cap.**
+- **Minimum 15 minutes per issue.** A session that ships only a 5-line tweak is a failure mode. If planned work finishes early, pick the next issue.
+- **Multi-issue, multi-repo loop.** With the extended caps, one run closes multiple issues across multiple repos. After Phase C on one issue, loop back to repo/issue selection and start the next. Keep looping until within 15 min of the cap.
 
-If you cannot fill 15 minutes with meaningful work, you picked the wrong issue — pick a bigger one from the same repo. If you genuinely cannot find 15 minutes of work in the repo, that repo is healthy; pick a different repo per the Phase 1 selection rules.
+If you cannot fill 15 minutes with meaningful work on an issue, you picked the wrong issue — pick a bigger one from the same repo. If a repo genuinely has no actionable work, it's healthy; fall through to the next repo per the Phase 1 selection rules.
 
 ---
 
