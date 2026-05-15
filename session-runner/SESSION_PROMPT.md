@@ -35,10 +35,10 @@ Do NOT start coding until Phase A is complete. The most common failure mode is j
      gh pr list --repo jt-mchorse/$r --state open --json number,title,isDraft,mergeable,mergeStateStatus,statusCheckRollup | jq -r ".[] | select(.isDraft==false) | \"$r#\\(.number): \\(.title) | mergeable=\\(.mergeable) state=\\(.mergeStateStatus)\""
    done
    ```
-   For each ready PR:
+   For each ready PR (oldest-first by `createdAt`):
    - If CI is green AND no merge conflicts AND the diff is sensible (no fabricated benchmarks, no secrets, tests present, MEMORY updated separately if a decision was made) → **merge with squash**: `gh pr merge <N> --repo jt-mchorse/<r> --squash --delete-branch`.
    - If anything is off, leave a comment on the PR with the specific blocker, do NOT merge.
-   - Time-box this phase to 15 minutes. If you have more than 3 PRs to review, do the top 3 and move on.
+   - **Time-box: 30 minutes total for the review pass, no per-PR cap.** Process as many as fit. Anything not reached carries to the next session. The review is fast (CI + diff sanity); 30 min is enough for ~10 PRs if they're clean.
 
    **Override note:** This PR review-and-merge step overrides handoff §10's "never auto-merge". The override is D-004 in portfolio-ops MEMORY. The protections that remain: drafts are never auto-merged; only `isDraft=false` PRs are eligible.
 
