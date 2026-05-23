@@ -78,3 +78,25 @@ Five of six PRs record a new core decision; the sixth (the CLI) is intentionally
 - No PR-review pass at session start (zero open non-draft PRs across the portfolio), so the review-and-merge step (D-004) was a no-op.
 
 **Next session:** Sweep the six PRs for CI signal and merge per D-004. The next code-writing target depends on what merges first — the safe choices are `embedding-model-shootout`, `chunking-strategies-lab`, or `vector-search-at-scale` (all untouched this run, all still have open priority:med work).
+
+## 2026-05-23 — Night session: two portfolio-wide invariants to 12-of-12
+
+**Duration:** ~60 min. **PRs merged (Phase A):** 4 — `llm-eval-harness` #30, `prompt-regression-suite` #25, `embedding-model-shootout` #20, `vector-search-at-scale` #22, all the day-session architecture-doc fix-and-lock work that had landed earlier. **PRs opened (Phase B+C):** 6 — `llm-cost-optimizer` #28, `rag-production-kit` #30, `chunking-strategies-lab` #22 + #24, `python-async-llm-pipelines` #25, `agent-orchestration-platform` #24.
+
+Two portfolio-wide invariants reached **12-of-12 coverage** in this session:
+
+1. **Architecture-doc lock.** Five repos had no lock at session start (`llm-cost-optimizer`, `rag-production-kit`, `chunking-strategies-lab`, `python-async-llm-pipelines`, `agent-orchestration-platform`). Authoring caught real drift in two of them: `agent-orchestration-platform` had six section headers + two paragraphs carrying pre-shipping `this PR — issue #N` / `deliberately not in this PR` framing for surfaces that had since shipped, and the doc never cited D-003 or D-004; `chunking-strategies-lab` had never cited D-011 (added 2026-05-22). The other three were test-only locks. Each PR mirrors the schema flexibly: D-NNN-only (`llm-cost-optimizer`, `chunking-strategies-lab`), `#NN`-only (none this session), or dual-axis (`rag-production-kit`, `python-async-llm-pipelines`, `agent-orchestration-platform`).
+
+2. **README snapshot/hygiene lock.** `chunking-strategies-lab` was the last repo without one. Authoring caught three real `this PR` drift sites plus an omission of D-011 from the README's architecture-doc-summary's `D-002…D-010` cite.
+
+Two novel portfolio patterns landed this session:
+
+- **`OPERATOR_SUPPLIED_PATHS` allow-list with inverse safety net.** Used in `llm-cost-optimizer` PR #28 to handle the `docs/savings_real.md` reference (the operator-committed real-workload artifact per D-012's no-fabricated-benchmarks posture). The safety net is a paired test that fires if a listed path ever lands on disk — at which point it has stopped being operator-supplied and should be dropped.
+
+- **Active-decision-range upper-bound test.** Used in `chunking-strategies-lab` PR #24 to anchor the README's `D-002…D-NNN` citation to the highest non-superseded `D-NNN` in `MEMORY/core_decisions_ai.md`. A future D-012 landing without the README updating fails the test loud with a regen hint.
+
+**Why this work, this session:** D-004 mandates the session begin with the PR review pass; that merged the four day-session architecture-doc fixes that had landed earlier. The night-sweep then completed the same pattern across the five remaining Python repos (plus the one TS repo, `agent-orchestration-platform`).
+
+**Open questions / blockers:** Portfolio-wide, the only remaining blocker for v0.1 across all 12 repos is the operator-supplied 60-second demo GIF — each repo has the deterministic capture script + smoke test infrastructure shipped but the recording itself is out of autonomous scope. Quality bar across all 12: 5-of-6 items done; demo GIF is the universal last item.
+
+**Next session:** PRs queue eight ready for the Phase A review pass: the six this session opened + any others that land between now and then. Beyond merging those, the portfolio is hygiene-complete for the autonomous patterns — improving from here means new feature work (decision-revisits, new core deliverables) or operator-side work (demo GIF capture).
