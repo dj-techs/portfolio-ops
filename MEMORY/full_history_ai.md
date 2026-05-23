@@ -98,3 +98,27 @@ context_for_next_session:
 decisions_made: []
 followups: []
 ---
+
+---
+session: 2026-05-23T04:10Z
+duration_min: 60
+issue: null
+focus: night_session_six_issues_closing_two_portfolio_wide_invariants_to_12_of_12
+delta:
+  prs_merged_phase_a: 4   # llm-eval-harness #30, prompt-regression-suite #25, embedding-model-shootout #20, vector-search-at-scale #22 (all arch-doc fixes)
+  prs_opened_phase_bc: 6
+  repos_touched: 6
+  invariants_completed: 2  # architecture-doc-lock 12/12, readme-lock 12/12
+context_for_next_session:
+  - architecture_doc_lock_pattern_now_at_12_of_12_coverage_caught_real_drift_in_agent_orchestration_platform_six_section_headers_plus_two_paragraphs_and_in_chunking_strategies_lab_d_011_omission_test_only_locks_added_to_llm_cost_optimizer_rag_production_kit_python_async_llm_pipelines
+  - readme_lock_pattern_now_at_12_of_12_chunking_strategies_lab_was_the_last_gap_authoring_the_lock_caught_three_this_pr_drift_sites_plus_d_010_to_d_011_decision_range_omission
+  - novel_portfolio_pattern_active_decision_range_upper_bound_test_anchors_readme_d_002_to_d_nnn_citation_to_memory_core_decisions_ai_md_loud_failure_when_a_new_d_lands_without_readme_updating
+  - operator_supplied_paths_allow_list_pattern_with_inverse_safety_net_added_in_llm_cost_optimizer_pr_28_first_use_was_for_d_012_docs_savings_real_md
+  - dual_axis_locks_hash_nn_plus_d_nnn_in_rag_production_kit_python_async_llm_pipelines_agent_orchestration_platform
+  - d_nnn_only_locks_in_llm_cost_optimizer_chunking_strategies_lab
+  - schema_pivot_visible_across_three_lock_shapes_some_repos_doc_uses_only_hash_nn_some_only_d_nnn_some_both
+  - 11_repos_at_v0_1_complete_minus_operator_supplied_60s_demo_gif_only_blocker_for_v0_1_across_all_12
+  - portfolio_wide_quality_bar_at_5_of_6_for_every_repo_demo_gif_is_the_only_outstanding_item
+decisions_made: []
+followups: []
+---
