@@ -100,3 +100,42 @@ Two novel portfolio patterns landed this session:
 **Open questions / blockers:** Portfolio-wide, the only remaining blocker for v0.1 across all 12 repos is the operator-supplied 60-second demo GIF — each repo has the deterministic capture script + smoke test infrastructure shipped but the recording itself is out of autonomous scope. Quality bar across all 12: 5-of-6 items done; demo GIF is the universal last item.
 
 **Next session:** PRs queue eight ready for the Phase A review pass: the six this session opened + any others that land between now and then. Beyond merging those, the portfolio is hygiene-complete for the autonomous patterns — improving from here means new feature work (decision-revisits, new core deliverables) or operator-side work (demo GIF capture).
+
+## 2026-05-26 — Night session: portfolio-wide validation sweep saturation
+**Duration:** ~50 min (well under the 360-min NIGHT cap) · 13 PRs / 13 issues closed across 10 repos.
+
+### Phase A (PR review pass)
+Four ready PRs at session start, all with `lint=FAILURE` due to `ruff format --check` failing on freshly-merged code from the prior day session:
+- `rag-production-kit#43` (deferred validation gaps from #41)
+- `llm-eval-harness#45` (max_tokens validation at AnthropicBackend)
+- `llm-eval-harness#47` (calibration bounded-float thresholds)
+- `embedding-model-shootout#36` (deferred validation gaps from #34)
+
+For each, ran `ruff format`, committed/pushed the format-only diff, waited for CI to go green, merged via squash. `llm-eval-harness#47` required a rebase onto main after `#45` landed (MEMORY YAML append conflict, resolved by keeping both entries per the append-only protocol).
+
+### Phase B+C × 9 (multi-issue loop)
+Each issue followed the canonical Phase B+C loop: file discovery issue → create branch → post plan comment → implement validator + tests → open PR → separate MEMORY commit. Average ~6 min/issue.
+
+| # | Repo | Issue | PR | What it closed |
+|---|------|-------|-----|----------------|
+| 1 | prompt-regression-suite | #37 | #38 | HashEmbedder.ngram + CanonicalResponse.embedding finiteness |
+| 2 | chunking-strategies-lab | #31 | #32 | StructureAwareStrategy completes the #29 strategy sweep |
+| 3 | vector-search-at-scale | #31 | #32 | HnswSimBackend.M/ef_construction/ef_search (recall collapse) |
+| 4 | python-async-llm-pipelines | #34 | #35 | AsyncPipeline + BatchedAsyncPipeline constructors |
+| 5 | agent-orchestration-platform | #31 | #32 | AgentRun.run validateOptions (budget unreachable on NaN) |
+| 6 | mcp-server-cookbook | #34 | #35 | GistsClient.constructor cfg validation (setTimeout silent coerce) |
+| 7 | nextjs-streaming-ai-patterns | #26 | #27 | Three mock-streamer validateOptions (closes #24 deferral) |
+| 8 | ai-app-integration-tests | #26 | #27 | installRecorder/installReplayer hosts validation (install-layer pass-through) |
+| 9 | llm-cost-optimizer | #40 | #41 | HashEmbedder.ngram (4/4 portfolio HashEmbedder symmetry) |
+
+### Patterns established / closed
+- **Portfolio HashEmbedder symmetry: 4/4 complete.** All four implementations (rag-kit, emb-shootout, prompt-regression, cost-optimizer) now share the `not isinstance(int) or isinstance(bool) or <= 0` contract.
+- **TypeScript validation pattern**: `function entry validateOptions/validateConfig + Number.isInteger/Number.isFinite + RangeError`. Now in agent-orch, mcp-cookbook, nextjs-streaming, ai-app-integration.
+- **Python validation pattern**: `__post_init__ isinstance + bool reject + sign check`. Comprehensive across all Python repos.
+- **Cache hit-rate degradation**, **install-layer pass-through**, **executor budget unreachable**, **HNSW recall collapse** — four new harm-class names added to the portfolio vocabulary, each closed at one site this session.
+
+**Why this work, this session:** Continuation of the night-shift validation sweep that's been running across the portfolio over the past 72 hours. With this session, every portfolio repo has either a Phase A merge or a Phase B+C PR tonight; the validation arc is comprehensively saturated.
+
+**Open questions / blockers:** none — every PR is ready for JT review. No unresolved merge conflicts. No core decisions made (every fix mirrors an existing pattern).
+
+**Next session:** The validation sweep has reached saturation. Future sessions should pivot away from validation per the prior session's memory guidance. Candidate directions: 60-second demo capture (operator-supplied), trending workflow audit, or a new improvement arc surfaced by JT's weekly review.
