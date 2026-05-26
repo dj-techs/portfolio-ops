@@ -139,3 +139,23 @@ Each issue followed the canonical Phase B+C loop: file discovery issue → creat
 **Open questions / blockers:** none — every PR is ready for JT review. No unresolved merge conflicts. No core decisions made (every fix mirrors an existing pattern).
 
 **Next session:** The validation sweep has reached saturation. Future sessions should pivot away from validation per the prior session's memory guidance. Candidate directions: 60-second demo capture (operator-supplied), trending workflow audit, or a new improvement arc surfaced by JT's weekly review.
+
+## 2026-05-26 — Day session: Phase A rescue (6 PRs) + README decision-range lock propagation (11 PRs)
+**Duration:** ~50 min real time
+
+**Phase A.** Rescued six atomic-write `io_utils` PRs (llm-eval-harness #51, embedding-model-shootout #38, agent-orchestration-platform #34, python-async-llm-pipelines #37, chunking-strategies-lab #34, vector-search-at-scale #34). All six failed the architecture-doc-lock because each had added a new D-NNN decision but hadn't cited it in `docs/architecture.md`. Pushed a one-line-ish doc fix per PR, then squash-merged after CI went green.
+
+**Phase B+C.** Propagated the `test_decision_range_cites_latest_active` invariant authored in chunking-strategies-lab's 2026-05-26 night session to the other 11 portfolio repos. Each PR added a D-002…D-NNN citation to the README's architecture section + a focused test file that scans `MEMORY/core_decisions_ai.md` for non-superseded entries and enforces the upper bound matches.
+
+Three template shapes emerged:
+- **Python (7 repos):** focused `tests/test_readme_decision_range.py` file with module-scoped `_max_active_decision_id()` helper.
+- **TypeScript (3 repos):** focused `test/readme-decision-range.test.ts` vitest file using the same parsing logic.
+- **mcp-server-cookbook (1 repo):** extended the existing `tools/check-readme.mjs` dep-free Node script instead of adding a new file, because the existing `readme-check` CI job already runs it — zero workflow changes.
+
+**Smoking gun.** `python-async-llm-pipelines` PR #39 caught the invariant doing real work: D-011 had landed in PR #36 (the `async_pipelines.io_utils` decision) but the README's range was stale at `D-002…D-010`. The new lock now traps this drift class portfolio-wide.
+
+**Why this work, this session:** The night session had just authored the lock pattern in chunking-strategies-lab and caught actual drift; propagating it portfolio-wide is the natural extension that closes the same drift class everywhere.
+
+**Open questions / blockers:** none. Portfolio invariants saturated again — next session should pivot.
+
+**Next session:** Demo GIF capture work is still the only operator-blocked v0.1 gap across 12 repos. Substantive next work is either trending-issue-driven features or new portfolio-wide patterns.
