@@ -218,3 +218,18 @@ Three template shapes emerged:
 **Open questions / blockers:** none — PR ready for review.
 
 **Next session:** Loop continues — pick the next-best work item.
+
+## 2026-05-27 — DAY session aggregate
+**Duration:** ~30 min real time · **PRs merged:** 19 (17 portfolio + 2 portfolio-ops) · **Phase B+C PRs opened:** 2 (both portfolio-ops, both merged before close)
+
+- **Phase A** rescued the 17 ready PRs the overnight 2026-05-27 session had authored (D-008/D-004 CONTRIBUTING propagation + earlier readme-doc fixes). Twelve merged cleanly; five required rebase due to memory YAML/YAML conflicts with an earlier-merged readme PR in the same repo. Pattern is well-established now — `/tmp/resolve_memory_conflict.py` resolves the conflict in one call per repo by keeping both append-only blocks. The Phase A `for r in <12 repos>; do ...` loop misses portfolio-ops itself; this session also swept the two ready portfolio-ops PRs (#2 issue #1, #4 issue #3) as a bonus pass.
+- **Phase B iteration 1 (issue #5):** `COWORK_HANDOFF.md` §1.3, §4 Hard rules, §10 Must Not Do plus `skills/portfolio-session/SKILL.md` description, time-budget paragraph, hard-rule bullet, multi-session paragraph, and failure-mode bullet all refreshed to cite the runner's `RUNTIME OVERRIDE` header and D-008 / D-006 cadence. The §10 auto-merge bullet recharacterised per D-004 (drafts, red CI, fishy diffs still protected). Also retroactively logged **D-006** (15-min minimum per issue, live since commit 7690999 on 2026-05-13) and **D-007** (fall-through to next repo when one-way-blocked, live since 4670bd0 on 2026-05-13) in `core_decisions_*.md`. These were live in the runner all along but never captured in MEMORY.
+- **Phase B iteration 2 (issue #7):** `workflows/ci-template.yml`, `workflows/trending-daily.yml`, `workflows/trending-weekly.yml` now tracked in git — the prior session had created the directory locally without `git add`. `templates/init-portfolio-repo.sh:44` was silently broken on fresh clone because it copies from this directory. Files are byte-identical to their `.github/workflows/` counterparts; `.github/workflows/` unchanged.
+- **Portfolio state after this session:** zero open priority:high issues across all 13 repos; three priority:low demo-capture issues remain blocked on an operator-supplied GIF recording.
+- **Validation arc:** still saturated per prior two sessions' memory guidance. This session did not propagate a new lock; both shipped issues were substantive content/tracking-state fixes, not propagation work.
+
+**Why this work, this session:** DAY session with substantial Phase A queue from the overnight propagation run. Phase A took the bulk of the meaningful work; Phase B+C closed the two remaining canonical-doc / tracking-state loose ends that prior session memory had flagged.
+
+**Open questions / blockers:** none — portfolio is genuinely at a saturated state for autonomous high-value work. Next session's substantive options likely lie outside per-repo invariant propagation; the demo-capture pipeline is the only outstanding v0.1 quality-bar item and that's operator-gated.
+
+**Next session:** Either NIGHT session continues with substantive engineering depth in one specific repo, or DAY session takes a short Phase A pass (if any PRs accumulate) and reports a healthy idle.
