@@ -26,13 +26,31 @@ mkdir -p "$LOG_DIR"
 
 # Single-instance lock — concurrent sessions race on repo/branch selection.
 LOCK="$PORTFOLIO_ROOT/.session.lock"
+# A lock older than this is always treated as stale. Longer than the max
+# (NIGHT) session cap of 360 min plus headroom, so it can never kill a real run.
+LOCK_MAX_AGE_SEC=$((7 * 3600))
+
+# A lock is only "live" if the PID is alive AND that PID is still running this
+# driver. Plain `kill -0` is not enough: after a reboot the OS recycles PIDs,
+# so an orphaned lock's PID can come back to life as some unrelated process
+# (this is what wedged sessions 2026-05-28 onward — PID 35017 got reused and
+# every run refused to start). Matching the command line closes that hole.
+lock_is_live() {
+  local pid="$1"
+  [ -n "$pid" ] || return 1
+  kill -0 "$pid" 2>/dev/null || return 1
+  ps -p "$pid" -o command= 2>/dev/null | grep -q 'run-session\.sh'
+}
+
 if [ -f "$LOCK" ]; then
   OTHER_PID="$(cat "$LOCK" 2>/dev/null || true)"
-  if [ -n "$OTHER_PID" ] && kill -0 "$OTHER_PID" 2>/dev/null; then
-    echo "ERROR: a session is already running (PID $OTHER_PID). Refusing to start a second." | tee -a "$LOG_FILE"
+  LOCK_AGE=$(( $(date +%s) - $(stat -f %m "$LOCK" 2>/dev/null || echo 0) ))
+  if lock_is_live "$OTHER_PID" && [ "$LOCK_AGE" -lt "$LOCK_MAX_AGE_SEC" ]; then
+    echo "ERROR: a session is already running (PID $OTHER_PID, lock age ${LOCK_AGE}s). Refusing to start a second." | tee -a "$LOG_FILE"
     exit 1
   fi
-  echo ">>> stale lock from dead PID $OTHER_PID — clearing" | tee -a "$LOG_FILE"
+  echo ">>> clearing stale lock (PID ${OTHER_PID:-none}, age ${LOCK_AGE}s) — not a live session" | tee -a "$LOG_FILE"
+  rm -f "$LOCK"
 fi
 echo $$ > "$LOCK"
 trap 'rm -f "$LOCK"' EXIT
