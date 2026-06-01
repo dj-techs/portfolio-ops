@@ -24,35 +24,86 @@ LOG_FILE="$LOG_DIR/session-$TIMESTAMP.log"
 
 mkdir -p "$LOG_DIR"
 
-# Single-instance lock — concurrent sessions race on repo/branch selection.
-LOCK="$PORTFOLIO_ROOT/.session.lock"
-# A lock older than this is always treated as stale. Longer than the max
-# (NIGHT) session cap of 360 min plus headroom, so it can never kill a real run.
-LOCK_MAX_AGE_SEC=$((7 * 3600))
+# --- Session time cap (computed early so the lock can record it) -------------
+# Day window 06:00-18:00 local -> 180 min; night 18:00-06:00 -> 360 min.
+HOUR=$((10#$(date +%H)))
+if [ "$HOUR" -ge 6 ] && [ "$HOUR" -lt 18 ]; then
+  SESSION_CAP_MIN=180; SESSION_PHASE="DAY"
+else
+  SESSION_CAP_MIN=360; SESSION_PHASE="NIGHT"
+fi
 
-# A lock is only "live" if the PID is alive AND that PID is still running this
-# driver. Plain `kill -0` is not enough: after a reboot the OS recycles PIDs,
-# so an orphaned lock's PID can come back to life as some unrelated process
-# (this is what wedged sessions 2026-05-28 onward — PID 35017 got reused and
-# every run refused to start). Matching the command line closes that hole.
-lock_is_live() {
+# --- Single-instance lock with a watchdog ------------------------------------
+# Only one session may run (concurrent runs race on repo/branch selection), but
+# a crashed, slept, reused-PID, or *frozen* prior run must never wedge the
+# schedule. The lock records "PID START_EPOCH CAP_MIN LOGFILE" so a later run can
+# tell a healthy live session from a corpse — and, if the holder is alive but
+# stuck, kill its whole process tree and take over.
+LOCK="$PORTFOLIO_ROOT/.session.lock"
+LOCK_HARD_MAX_SEC=$((7 * 3600))               # absolute ceiling; older is always stale
+FREEZE_GRACE_MIN="${FREEZE_GRACE_MIN:-20}"    # allowed overrun past a session's own cap
+# Opt-in heartbeat: if >0, a session whose log has been silent this many minutes
+# is treated as frozen. Off by default because `claude --print` may buffer output;
+# enable once you've confirmed your sessions write to the log steadily.
+FREEZE_IDLE_MIN="${FREEZE_IDLE_MIN:-0}"
+
+# Alive AND still running this driver — guards against PID reuse after a reboot
+# (PID 35017 got recycled and wedged every run 2026-05-28 onward).
+pid_is_our_driver() {
   local pid="$1"
   [ -n "$pid" ] || return 1
   kill -0 "$pid" 2>/dev/null || return 1
   ps -p "$pid" -o command= 2>/dev/null | grep -q 'run-session\.sh'
 }
 
+# Kill a stuck session's entire process group (driver + claude + descendants).
+kill_session() {
+  local pid="$1" pgid
+  [ -n "$pid" ] && [ "$pid" != "$$" ] || return 0
+  pgid="$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ')"
+  echo ">>> killing stuck session PID $pid (pgid ${pgid:-n/a})" | tee -a "$LOG_FILE"
+  if [ -n "$pgid" ]; then
+    kill -TERM "-$pgid" 2>/dev/null || true; sleep 5; kill -KILL "-$pgid" 2>/dev/null || true
+  else
+    kill -TERM "$pid" 2>/dev/null || true; sleep 5; kill -KILL "$pid" 2>/dev/null || true
+  fi
+}
+
 if [ -f "$LOCK" ]; then
-  OTHER_PID="$(cat "$LOCK" 2>/dev/null || true)"
-  LOCK_AGE=$(( $(date +%s) - $(stat -f %m "$LOCK" 2>/dev/null || echo 0) ))
-  if lock_is_live "$OTHER_PID" && [ "$LOCK_AGE" -lt "$LOCK_MAX_AGE_SEC" ]; then
-    echo "ERROR: a session is already running (PID $OTHER_PID, lock age ${LOCK_AGE}s). Refusing to start a second." | tee -a "$LOG_FILE"
+  # Parse the rich lock format; tolerate the legacy PID-only format.
+  read -r OTHER_PID OTHER_START OTHER_CAP OTHER_LOG < "$LOCK" 2>/dev/null || true
+  LOCK_MTIME="$(stat -f %m "$LOCK" 2>/dev/null || echo 0)"
+  : "${OTHER_START:=$LOCK_MTIME}"   # legacy lock: use file mtime as start proxy
+  : "${OTHER_CAP:=360}"             # legacy lock: assume the max (NIGHT) cap
+  { [ -n "$OTHER_LOG" ] && [ -f "$OTHER_LOG" ]; } || OTHER_LOG="$LOCK"
+  NOW="$(date +%s)"
+  AGE=$(( NOW - OTHER_START ))
+  IDLE=$(( NOW - $(stat -f %m "$OTHER_LOG" 2>/dev/null || echo "$OTHER_START") ))
+  OVERRUN_SEC=$(( OTHER_CAP * 60 + FREEZE_GRACE_MIN * 60 ))
+
+  REASON=""
+  if ! pid_is_our_driver "$OTHER_PID"; then
+    REASON="PID ${OTHER_PID:-none} is gone or has been reused — not a live session"
+  elif [ "$AGE" -ge "$LOCK_HARD_MAX_SEC" ]; then
+    REASON="age ${AGE}s exceeds the 7h hard ceiling"
+  elif [ "$AGE" -ge "$OVERRUN_SEC" ]; then
+    REASON="overran its ${OTHER_CAP}m cap (age ${AGE}s, +${FREEZE_GRACE_MIN}m grace) — frozen/stuck"
+  elif [ "$FREEZE_IDLE_MIN" -gt 0 ] && [ "$IDLE" -ge $(( FREEZE_IDLE_MIN * 60 )) ]; then
+    REASON="no log output for ${IDLE}s (>= ${FREEZE_IDLE_MIN}m) — frozen"
+  fi
+
+  if [ -z "$REASON" ]; then
+    echo "ERROR: a healthy session is already running (PID $OTHER_PID, age ${AGE}s, idle ${IDLE}s). Refusing to start a second." | tee -a "$LOG_FILE"
     exit 1
   fi
-  echo ">>> clearing stale lock (PID ${OTHER_PID:-none}, age ${LOCK_AGE}s) — not a live session" | tee -a "$LOG_FILE"
+
+  echo ">>> prior lock is stale: $REASON" | tee -a "$LOG_FILE"
+  pid_is_our_driver "$OTHER_PID" && kill_session "$OTHER_PID"   # alive but stuck -> kill it
   rm -f "$LOCK"
 fi
-echo $$ > "$LOCK"
+
+# Acquire: record PID, start time, cap, and log path for the next run's watchdog.
+echo "$$ $(date +%s) $SESSION_CAP_MIN $LOG_FILE" > "$LOCK"
 trap 'rm -f "$LOCK"' EXIT
 
 echo ">>> portfolio-session driver" | tee -a "$LOG_FILE"
@@ -100,18 +151,7 @@ if [[ "$WHO" != "jt-mchorse" ]]; then
 fi
 echo ">>> gh auth ok as $WHO" | tee -a "$LOG_FILE"
 
-# 4. Time-of-day session cap (D-008): day = 2x the 90-min base, night = 4x.
-#    Day window 06:00-18:00 local -> 180 min. Night 18:00-06:00 -> 360 min.
-HOUR="$(date +%H)"
-# strip any leading zero so arithmetic comparison is base-10
-HOUR=$((10#$HOUR))
-if [ "$HOUR" -ge 6 ] && [ "$HOUR" -lt 18 ]; then
-  SESSION_CAP_MIN=180
-  SESSION_PHASE="DAY"
-else
-  SESSION_CAP_MIN=360
-  SESSION_PHASE="NIGHT"
-fi
+# 4. Session window/cap were computed up front (see the lock section above).
 echo ">>> session window: $SESSION_PHASE — cap ${SESSION_CAP_MIN} min" | tee -a "$LOG_FILE"
 
 # 5. Invoke Claude Code with the session prompt, prefixed by a runtime override
